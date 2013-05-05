@@ -1,0 +1,7 @@
+;$Id$
+
+name = Search Selector
+description = Add drop down selection to select where to search.
+package = Libdb
+core = 7.x
+files[] = search_selector.module

@@ -1,0 +1,161 @@
+<?php
+
+// $Id$
+
+/**
+ * @file
+ * Module to choose where to make next search.
+ *
+ * Last modified: 04.08.2011 Mika Hatakka
+ */
+
+/**
+ * Implements hook_help().
+ */
+function search_selector_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#search_selector':
+      return check_markup(file_get_contents(dirname(__FILE__) . "/README.txt"));
+    case 'admin/config/search/search_selector':
+      $output = '<p>' . t('This page list standard targets ready to choose from the Search selector. Optional targets are also listed.') . '</p>';
+      return $output;
+    case 'admin/config/search/search_selector/add':
+      return '<p>' . t('Use this page to add a new target to the Search selector.') . '</p>';
+  }
+}
+
+/**
+ * Implemtents hook_menu().
+ */
+function search_selector_menu() {
+
+  $items['admin/config/search/search_selector'] = array(
+    'title' => 'Search Selector',
+    'description' => 'Configure Search Selector block settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('search_selector_admin_settings'),
+    'access arguments' => array('access administration pages'),
+    'file' => 'search_selector.admin.inc',
+  );
+  $items['admin/config/search/search_selector/%/edit'] = array(
+    'title' => 'Search Selector',
+    'description' => 'Change the showing caption of chosen selection.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('search_selector_admin_edit', 4),
+    'access arguments' => array('access administration pages'),
+    'file' => 'search_selector.admin.inc',
+  );
+  $items['admin/config/search/search_selector/list'] = array(
+    'title' => 'List',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['admin/config/search/search_selector/add'] = array(
+    'title' => 'Add new item',
+    'description' => 'Add new modules to the Search selector.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('search_selector_admin_add'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'search_selector.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implemtents hook_block_info().
+ */
+function search_selector_block_info() {
+  $blocks = array();
+  $blocks['select_search'] = array(
+    'info' => t('Search box with target selection'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implemtents hook_block_view().
+ */
+function search_selector_block_view($delta = '') {
+  switch ($delta) {
+    case 'select_search':
+      $block['subject'] = t('Search');
+      $block['content'] = drupal_get_form('search_selector_block_form');
+  }
+  return $block;
+}
+
+/**
+ * Search form with textfiled and dropdown menu
+ */
+function search_selector_block_form() {
+  drupal_add_css(drupal_get_path('module', 'search_selector') . '/search_selector.css');
+  $std_mods = variable_get('stdmodules', array(1 => 1, 2 => 2, 3 => 3));
+  if (!empty($std_mods[1])) {
+    $options[1] = variable_get('ssel_capt_1', t('Search from Content Management System'));
+  }
+  if (!empty($std_mods[2])) {
+    $options[2] = variable_get('ssel_capt_2', t('Library database search'));
+  }
+  if (!empty($std_mods[3])) {
+    $options[3] = variable_get('ssel_capt_3', 'Google');
+  }
+  $opt_mods = variable_get('ssel_targets', array());
+  foreach ($opt_mods as $key => $val) {
+    if ($key > 0 && $key < 4) {
+      continue;
+    }
+    $options[$key] = $val;
+  }
+  if (variable_get('sel_box_orientation', 1) == 1) {
+    $pre_str = '<div class="multiline">';
+  }
+  else {
+    $pre_str = '<div class="container-inline">';
+  }
+  $form['haku'] = array(
+    '#prefix' => $pre_str,
+    '#suffix' => '</div>'
+  );
+  $form['haku']['search_words'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Search'),
+    '#title_display' => 'invisible',
+    '#size' => 15,
+    '#default_value' => '',
+    '#attributes' => array('title' => t('Enter the terms you wish to search for.')),
+  );
+  $form['haku']['search_from'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => variable_get('ssel_default', 1),
+  );
+  $form['haku']['actions'] = array('#type' => 'actions');
+  $form['haku']['actions']['submit'] = array('#type' => 'submit', '#value' => t('Search'));
+  $form['#submit'][] = 'search_selector_search_box_form_submit';
+
+  return $form;
+}
+
+/**
+ * Implementation of hook_submit().
+ */
+function search_selector_search_box_form_submit($form, &$form_state) {
+  $word = $form_state['values']['search_words'];
+  if (!empty($word)) {
+    $type = $form_state['values']['search_from'];
+    if ($type == 1) {
+      $form_state['redirect'] = 'search/node/' . $word;
+    }
+    elseif ($type == 2) {
+      $form_state['redirect'] = 'libdbsearch/haku/vapaasana=' . $word;
+    }
+    elseif ($type == 3) {
+      $form_state['redirect'] = 'http://www.google.com/search?q=' . $word;
+    }
+    else {
+      $form_state['redirect'] = str_replace('%', $word, $type);
+    }
+  }
+  return;
+}

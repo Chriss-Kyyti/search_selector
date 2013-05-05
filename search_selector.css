@@ -1,0 +1,29 @@
+/* 
+    Document   : search_selector
+    Created on : 3.8.2011, 11:47:07
+    Author     : Mika.Hatakka
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+/* 
+   TODO customize this sample style
+   Syntax recommendation http://www.w3.org/TR/REC-CSS2/
+*/
+
+#block-search-selector-select-search .multiline #edit-search-words { 
+  width: 94%; /* For some reason border and padding are exluded from width. */
+}
+
+#block-search-selector-select-search .multiline #edit-search-from { 
+  width: 100%;
+}
+/*
+#block-search-selector-select-search .container-inline #edit-search-words { 
+  width: auto;
+}
+
+#block-search-selector-select-search .container-inline #edit-search-from { 
+  width: auto;
+}
+*/

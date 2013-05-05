@@ -1,0 +1,1 @@
+Readme file for Search selector -module for Drupal 7.
