@@ -143,6 +143,9 @@ function search_selector_block_form() {
 function search_selector_search_box_form_submit($form, &$form_state) {
   $word = $form_state['values']['search_words'];
   if (!empty($word)) {
+    if (isset($_GET['destination'])) {
+      unset($_GET['destination']);
+    }
     $type = $form_state['values']['search_from'];
     if ($type == 1) {
       $form_state['redirect'] = 'search/node/' . $word;
