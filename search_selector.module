@@ -92,13 +92,16 @@ function search_selector_block_form() {
   drupal_add_css(drupal_get_path('module', 'search_selector') . '/search_selector.css');
   $std_mods = variable_get('stdmodules', array(1 => 1, 2 => 2, 3 => 3));
   if (!empty($std_mods[1])) {
-    $options[1] = variable_get('ssel_capt_1', t('Search from Content Management System'));
+    $str = variable_get('ssel_capt_1', 'Search from Content Management System');
+    $options[1] = t(check_plain($str));
   }
   if (!empty($std_mods[2])) {
-    $options[2] = variable_get('ssel_capt_2', t('Library database search'));
+    $str = variable_get('ssel_capt_2', 'Library database search');
+    $options[2] = t(check_plain($str));
   }
   if (!empty($std_mods[3])) {
-    $options[3] = variable_get('ssel_capt_3', 'Google');
+    $str = variable_get('ssel_capt_3', 'Google');
+    $options[3] = t(check_plain($str));
   }
   $opt_mods = variable_get('ssel_targets', array());
   foreach ($opt_mods as $key => $val) {
