@@ -1,12 +1,10 @@
 <?php
 
-// $Id$
-
 /**
  * @file
  * Module to choose where to make next search.
  *
- * Last modified: 04.08.2011 Mika Hatakka
+ * Last modified: 04.08.2011 Mika Hatakka.
  */
 
 /**
@@ -16,9 +14,11 @@ function search_selector_help($path, $arg) {
   switch ($path) {
     case 'admin/help#search_selector':
       return check_markup(file_get_contents(dirname(__FILE__) . "/README.txt"));
+
     case 'admin/config/search/search_selector':
       $output = '<p>' . t('This page list standard targets ready to choose from the Search selector. Optional targets are also listed.') . '</p>';
       return $output;
+
     case 'admin/config/search/search_selector/add':
       return '<p>' . t('Use this page to add a new target to the Search selector.') . '</p>';
   }
@@ -86,7 +86,7 @@ function search_selector_block_view($delta = '') {
 }
 
 /**
- * Search form with textfiled and dropdown menu
+ * Search form with textfiled and dropdown menu.
  */
 function search_selector_block_form() {
   drupal_add_css(drupal_get_path('module', 'search_selector') . '/search_selector.css');
@@ -108,7 +108,7 @@ function search_selector_block_form() {
     if ($key > 0 && $key < 4) {
       continue;
     }
-    $options[$key] = $val;
+    $options[$key] = $val['target'];
   }
   if (variable_get('sel_box_orientation', 1) == 1) {
     $pre_str = '<div class="multiline">';
@@ -118,7 +118,7 @@ function search_selector_block_form() {
   }
   $form['haku'] = array(
     '#prefix' => $pre_str,
-    '#suffix' => '</div>'
+    '#suffix' => '</div>',
   );
   $form['haku']['search_words'] = array(
     '#type' => 'textfield',
@@ -141,7 +141,7 @@ function search_selector_block_form() {
 }
 
 /**
- * Implementation of hook_submit().
+ * Implements hook_submit().
  */
 function search_selector_search_box_form_submit($form, &$form_state) {
   $word = $form_state['values']['search_words'];
@@ -160,8 +160,8 @@ function search_selector_search_box_form_submit($form, &$form_state) {
       $form_state['redirect'] = 'http://www.google.com/search?q=' . $word;
     }
     else {
-      $form_state['redirect'] = str_replace('%', $word, $type);
+      $searches = variable_get('ssel_targets', array());
+      $form_state['redirect'] = str_replace('%', $word, $searches[$type]['path']);
     }
   }
-  return;
 }

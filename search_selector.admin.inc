@@ -1,27 +1,26 @@
 <?php
 
-// $Id$
-
 /**
  * @file
  * Search selector settings form.
  *
- * Last modified: 04.08.2011 Mika Hatakka
+ * Last modified: 04.08.2011 Mika Hatakka.
  */
 
 /**
  * Set fields for module settings, shown to administrator.
  *
- * @return array field description for settings
+ * @return array
+ *    Field description for settings.
  */
 function search_selector_admin_settings() {
   define('VALI', '&nbsp;&nbsp;&nbsp;');
   $form = array();
   $form['standard'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Included standard modules')
+    '#title' => t('Included standard modules'),
   );
-  // Options list must start at 1, if starts at 0, the first one can't chosen
+  // Options list must start at 1, if starts at 0, the first one can't chosen.
   if (module_exists('search')) {
     $std_list['1'] = t('Search from Content Management System');
   }
@@ -43,26 +42,29 @@ function search_selector_admin_settings() {
         variable_del('ssel_default');
       }
     }
-    $options[$key] = $val . VALI . l('Change caption', $ssel_path . $key . '/edit');
+    $options[$key] = $val . VALI . l(t('Change caption'), $ssel_path . $key . '/edit');
   }
   $form['standard']['stdmodules'] = array(
-    //'#title' => t('Include standard modules'),
     '#type' => 'checkboxes',
     '#description' => (t('Select needed standard modules for the Search Selector.')),
     '#options' => $options,
     '#default_value' => $ssel_targets,
   );
-  // Optional module section
+  // Optional module section.
   $form['optional'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Included optional modules')
+    '#title' => t('Included optional modules'),
   );
   $opt_mods = variable_get('ssel_targets', array());
   if (!empty($opt_mods)) {
+    $opt_sel = array();
+    foreach ($opt_mods as $key => $mod) {
+      $opt_sel[$key] = $mod['target'] . ' ' . l(t('edit'), 'admin/config/search/search_selector/' . $key . '/edit');
+    }
     $form['optional']['opttargets'] = array(
       '#type' => 'checkboxes',
       '#description' => (t('Chosen optional modules for the Search Selector.')),
-      '#options' => $opt_mods,
+      '#options' => $opt_sel,
     );
     $form['optional']['remove'] = array(
       '#type' => 'submit',
@@ -100,7 +102,7 @@ function search_selector_admin_settings() {
     '#title' => t('Searc box orientation'),
     '#options' => array(
       t('Horizontal'),
-      t('Vertical')
+      t('Vertical'),
     ),
     '#description' => t('Set the search box orientation, horizontal or vertical.'),
     '#default_value' => variable_get('sel_box_orientation', 1),
@@ -109,33 +111,56 @@ function search_selector_admin_settings() {
 }
 
 /**
- * Change the showing caption
+ * Change the showing caption.
  */
 function search_selector_admin_edit($form, &$form_state, $selection) {
   if ($selection == '1') {
     $str = t('Search from Content Management System');
   }
-  else if ($selection == '2') {
+  elseif ($selection == '2') {
     $str = t('Library database search');
   }
-  else if ($selection == '3') {
+  elseif ($selection == '3') {
     $str = 'Google';
   }
   else {
     $str = '';
   }
-  $str = t('New caption for option') . " '" . $str . "'";
-  $form['caption'] = array(
-    '#title' => $str,
-    '#type' => 'textfield',
-    '#size' => 30,
-    '#default_value' => variable_get('ssel_capt_' . $selection, ''),
-    '#description' => (t('Text to be shown in the Search Selector dropdown list.')),
-  );
-  $form['selection'] = array(
-    '#type' => 'value',
-    '#value' => $selection,
-  );
+  if (empty($str)) {
+    $others = variable_get('ssel_targets', '');
+    if (empty($others) || !isset($others[$selection])) {
+      drupal_goto('admin/config/search/search_selector');
+    }
+    $str = t("New caption for option '@str'", array('@str' => $others[$selection]));
+    $form['target'] = array(
+      '#title' => t('Caption for search target'),
+      '#type' => 'textfield',
+      '#size' => 30,
+      '#default_value' => $others[$selection]['target'],
+      '#description' => (t('Text to be shown in the Search Selector dropdown list.')),
+    );
+    $form['path'] = array(
+      '#title' => t('Search path'),
+      '#type' => 'textfield',
+      '#size' => 30,
+      '#default_value' => $others[$selection]['path'],
+      '#description' => (t('Path where to send search query. Mark search word with %. If outside Drupal site, start with "http://".')),
+    );
+  }
+  else {
+    $str = t("New caption for option '@str'", array('@str' => $str));
+    $form['caption'] = array(
+      '#title' => $str,
+      '#type' => 'textfield',
+      '#size' => 30,
+      '#default_value' => variable_get('ssel_capt_' . $selection, ''),
+      '#description' => (t('Text to be shown in the Search Selector dropdown list.')),
+    );
+    $form['selection'] = array(
+      '#type' => 'value',
+      '#value' => $selection,
+    );
+  }
   $form['update'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
@@ -145,24 +170,31 @@ function search_selector_admin_edit($form, &$form_state, $selection) {
 }
 
 /**
- * Implementation for editing caption
+ * Implementation for editing caption.
  */
 function search_selector_edit_submit($form, &$form_state) {
-  $value = $form_state['values']['caption'];
-  $selection = $form_state['values']['selection'];
-  if (!empty($value) && !empty($selection)) {
-    variable_set('ssel_capt_' . $selection, check_plain($value));
+  $target = $form_state['values']['target'];
+  $path = $form_state['values']['path'];
+  if (!empty($target) && !empty($path)) {
+    $machine_name = transliteration_clean_filename($target);
+    $target_list = variable_get('ssel_targets', '');
+    $target_list[$machine_name] = array(
+      'target' => $target,
+      'path' => $path,
+    );
+    variable_set('ssel_targets', $target_list);
+    $form_state['redirect'] = 'admin/config/search/search_selector';
   }
   $form_state['redirect'] = 'admin/config/search/search_selector';
 }
 
 /**
- * Form creation form adding optional modules
+ * Form creation form adding optional modules.
  */
 function search_selector_admin_add() {
   $form['add'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Select a new module to add')
+    '#title' => t('Select a new module to add'),
   );
   $form['add']['target'] = array(
     '#title' => t('Caption for search target'),
@@ -186,21 +218,25 @@ function search_selector_admin_add() {
 }
 
 /**
- * Implementation for adding optional modules to selector
+ * Implementation for adding optional modules to selector.
  */
 function search_selector_add_submit($form, &$form_state) {
   $target = $form_state['values']['target'];
   $path = $form_state['values']['path'];
   if (!empty($target) && !empty($path)) {
+    $machine_name = transliteration_clean_filename($target);
     $target_list = variable_get('ssel_targets', '');
-    $target_list[$path] = $target;
+    $target_list[$machine_name] = array(
+      'target' => $target,
+      'path' => $path,
+    );
     variable_set('ssel_targets', $target_list);
     $form_state['redirect'] = 'admin/config/search/search_selector';
   }
 }
 
 /**
- * Implementation for removing optional modules from selector
+ * Implementation for removing optional modules from selector.
  */
 function search_selector_remove_submit($form, &$form_state) {
   $targets = variable_get('ssel_targets', '');
