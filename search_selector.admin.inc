@@ -88,7 +88,8 @@ function search_selector_admin_settings() {
     if ($key > 0 && $key < 4) {
       continue;
     }
-    $std_list[$key] = $val;
+    //$std_list[$key] = $val;
+    $std_list[$key] = $val['target'];
   }
   $form['ssel_default'] = array(
     '#title' => t('Default search target'),
